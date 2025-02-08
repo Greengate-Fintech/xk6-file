@@ -4,11 +4,19 @@ import file from 'k6/x/file';
 
 const filepath = 'sample-output.txt';
 const binaryFilepath = 'sample-image.jpg';
+const dirPath = 'test-dir';
 
 export default function () {
     // Write/append string to file
     file.writeString(filepath, 'New file. First line.\n');
     file.appendString(filepath, `Second line. VU: ${__VU}  -  ITER: ${__ITER}`);
+    const fileContet = file.readFile(filepath);
+    
+    check(fileContet, {
+        "file content is correct": (content) =>
+          content.includes("New file. First line.") &&
+          content.includes(`Second line. VU: ${__VU}  -  ITER: ${__ITER}`),
+    });
 
     // Remove rows from text file/clear file content/delete file
     file.removeRowsBetweenValues(filepath, 2, 2);
@@ -24,4 +32,29 @@ export default function () {
 
     // Rename file
     file.renameFile(binaryFilepath, 'renamed-image.jpg')
+
+    // Create a directory
+    file.createDirectory(dirPath);
+
+    // Verify directory creation
+    check(file.writeString(`${dirPath}/test-file.txt`, "Testing directory creation.") === undefined, {
+        "directory created": (result) => result,
+    });
+    
+    // Verify directory deletion
+    file.deleteDirectory(dirPath);
+    
+    check(
+        (() => {
+            try {
+                file.writeString(`${dirPath}/test-file.txt`, "This should fail.");
+                return false;
+            } catch (e) {
+                return true;
+            }
+        })(),
+        {
+            "directory deleted": (result) => result,
+        }
+    );
 }

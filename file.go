@@ -6,6 +6,7 @@ package file
 
 import (
 	"bufio"
+	"io"
 	"os"
 
 	"go.k6.io/k6/js/modules"
@@ -127,6 +128,40 @@ func (*FILE) RemoveRowsBetweenValues(path string, start, end int) error {
 	}
 
 	if err := writer.Flush(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ReadFile reads the contents of a file and returns it as a string
+func (*FILE) ReadFile(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	// Read the file contents
+	content, err := io.ReadAll(f)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
+}
+
+// CreateDirectory creates a new directory at the specified path
+func (*FILE) CreateDirectory(path string) error {
+	err := os.MkdirAll(path, 0o755)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteDirectory deletes the directory at the specified path
+func (*FILE) DeleteDirectory(path string) error {
+	err := os.RemoveAll(path)
+	if err != nil {
 		return err
 	}
 	return nil
